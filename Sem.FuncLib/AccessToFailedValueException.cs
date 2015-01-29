@@ -20,7 +20,7 @@ namespace Sem.FuncLib
         /// <summary>
         /// Initializes a new instance of the <see cref="AccessToFailedValueException"/> class.
         /// </summary>
-        /// <param name="message"> The exception message. </param>
+        /// <param name="message"> The exception message describing the error. </param>
         /// <param name="innerException"> The inner exception causing the failure. </param>
         public AccessToFailedValueException(string message, Exception innerException)
             : base(message, innerException)
