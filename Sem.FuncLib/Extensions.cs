@@ -45,6 +45,19 @@ namespace Sem.FuncLib
             return eitherSource.Select(x => x.WhenIs(action));
         }
 
+        /// <summary>
+        /// Executes the <see cref="Action{T}"/> for each item of <paramref name="eitherSource"/> that is of the matching type <typeparamref name="TLeft"/>.
+        /// </summary>
+        /// <param name="eitherSource"> The source of the <see cref="Either{TLeft,TRight}"/> elements. </param>
+        /// <param name="action"> The action that determines the elements to use. </param>
+        /// <typeparam name="TLeft"> The left type parameter of the <see cref="Either{TLeft,TRight}"/> </typeparam>
+        /// <typeparam name="TRight"> The right type parameter of the <see cref="Either{TLeft,TRight}"/> </typeparam>
+        /// <returns> The elements of <paramref name="eitherSource"/>. </returns>
+        public static IEnumerable<Either<TLeft, TRight>> WhenIs<TLeft, TRight>(this IEnumerable<Either<TLeft, TRight>> eitherSource, Action<TRight> action)
+        {
+            return eitherSource.Select(x => x.WhenIs(action));
+        }
+
         public static Func<TValue, Either<TResult1, TResult2>> Try<TValue, TResult1, TResult2>(this Func<TValue, TResult1> func)
             where TResult2 : Exception
         {

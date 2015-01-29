@@ -1,3 +1,12 @@
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="ExceptionLogger.cs" company="Sven Erik Matzen">
+//   (c) Sven Erik Matzen
+// </copyright>
+// <summary>
+//   Defines the ExceptionLogger type.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+
 namespace Sem.FuncLib.Tests
 {
     using System;
@@ -6,6 +15,8 @@ namespace Sem.FuncLib.Tests
     public class ExceptionLogger
     {
         private readonly List<string> list = new List<string>();
+        
+        private readonly List<int> intList = new List<int>();
 
         public IEnumerable<string> List
         {
@@ -15,9 +26,22 @@ namespace Sem.FuncLib.Tests
             }
         }
 
+        public List<int> IntList
+        {
+            get
+            {
+                return this.intList;
+            }
+        }
+
         public void HandleException(Exception ex)
         {
             this.list.Add(ex.ToString());
+        }
+
+        public void LogInts(int value)
+        {
+            this.IntList.Add(value);
         }
     }
 }

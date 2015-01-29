@@ -55,6 +55,7 @@
     <Compile Include="ConversionToFailable.cs" />
     <Compile Include="EitherProcessing.cs" />
     <Compile Include="ExceptionLogger.cs" />
+    <Compile Include="ExecutionCounter.cs" />
     <Compile Include="GivenASetOfNumber.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sample.cs" />

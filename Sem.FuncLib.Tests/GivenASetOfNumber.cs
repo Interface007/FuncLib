@@ -14,8 +14,6 @@ namespace Sem.FuncLib.Tests
 
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-    using Sem.FuncLib.Tests;
-
     /// <summary>
     /// The given a set of number.
     /// </summary>

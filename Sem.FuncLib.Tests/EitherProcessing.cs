@@ -1,6 +1,16 @@
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="EitherProcessing.cs" company="Sven Erik Matzen">
+//   (c) Sven Erik Matzen
+// </copyright>
+// <summary>
+//   The tests for the processing of type <see cref="Either{TOne,TTwo}" />.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+
 namespace Sem.FuncLib.Tests
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
 
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -31,6 +41,10 @@ namespace Sem.FuncLib.Tests
             Assert.IsTrue(lastExceptionMessage.StartsWith("System.DivideByZeroException"));
         }
 
+        /// <summary>
+        /// The can handle either case 5.
+        /// Here we "try" to calculate using an extension to <see cref="IEnumerable{T}"/>
+        /// </summary>
         [TestMethod]
         public void CanHandleEitherCase5()
         {
@@ -45,6 +59,11 @@ namespace Sem.FuncLib.Tests
             Assert.IsTrue(lastExceptionMessage.StartsWith("System.DivideByZeroException"));
         }
 
+        /// <summary>
+        /// Here we handle the case that the <see cref="Either{TLeft,TRight}"/> is a <see cref="DivideByZeroException"/>
+        /// using a typed lambda. As you can see we can use a type that inherits from <see cref="Exception"/> when the
+        /// type of the <see cref="Either{TLeft,TRight}"/> is <see cref="Exception"/>.
+        /// </summary>
         [TestMethod]
         public void CanHandleIEnumerableOfEither()
         {
@@ -60,77 +79,66 @@ namespace Sem.FuncLib.Tests
                             .StartsWith("System.DivideByZeroException"));
         }
 
+        /// <summary>
+        /// In this case we handle two different cases (integers and exceptions).
+        /// </summary>
         [TestMethod]
         public void SplittingByType()
         {
-            var lastExceptionMessage = string.Empty;
             var logger = new ExceptionLogger();
             var counter = new ExecutionCounter();
 
             var res1 = new[] { "1", "12", "123", "1234", null, "12345" }
                 .Try(value => counter.Action(() => 100 / (value.Length - 2)))
+                .WhenIs(logger.LogInts)
                 .WhenIs(logger.HandleException)
-                .WhenIs((DivideByZeroException e) => lastExceptionMessage += e.ToString())
                 .ToArray();
 
             Assert.AreEqual(6, res1.Count());           // we should have 6 return values
             Assert.AreEqual(2, logger.List.Count());    // out list of logs contains two exceptions
+            Assert.AreEqual(4, logger.IntList.Count()); // out list of ints contains two integers
             Assert.AreEqual(6, counter.Count);          // we have only 6 executions of the calculation
             Assert.AreEqual(-100, (int)res1[0]);        // check for a successfull result
-            Assert.IsTrue(lastExceptionMessage          // and validate the execution for the DivideByZeroException
-                            .StartsWith("System.DivideByZeroException"));
         }
 
+        /// <summary>
+        /// Here we "inject" two different actions in the processing of the integers.
+        /// Be aware that <see cref="ExecutionCounter.Action2{TValue,TRight}"/> and
+        /// <see cref="ExecutionCounter.Action2{TValue,TRight}"/> are called for each 
+        /// element when the method <see cref="Calculate"/> is called by the extension method
+        /// <see cref="Extensions.Try{TValue,TResult1,TResult2}(System.Func{TValue,TResult1})"/>,
+        /// so skipping one item will also skip the execution of the "injected" methods 
+        /// <see cref="ExecutionCounter.Action2{TValue,TRight}"/> and
+        /// <see cref="ExecutionCounter.Action2{TValue,TRight}"/>.
+        /// </summary>
         [TestMethod]
-        public void SplittingByType2()
+        public void PerformingActionsWhileCalculating()
         {
-            var lastExceptionMessage = string.Empty;
             var logger = new ExceptionLogger();
             var counter = new ExecutionCounter();
-
-            Func<Func<string, string>, int, string> f = null;
 
             var res1 = new[] { "1", "12", "123", "1234", null, "12345" }
                 .WithAction<string, int>(counter.Action2)   // this is not optimal, since we need to specify types here
                 .WithAction<string, int>(counter.Action3)   // this is not optimal, since we need to specify types here
+                .Skip(1)
                 .Try(Calculate)                             // here the value is calculated while calling the two actions defined above
                 .WhenIs(logger.HandleException)
-                .WhenIs((DivideByZeroException e) => lastExceptionMessage += e.ToString())
                 .ToArray();
 
-            Assert.AreEqual(6, res1.Count());           // we should have 6 return values
-            Assert.AreEqual(6, counter.Count);          // we have only 6 executions of the calculation
+            Assert.AreEqual(5, res1.Count());           // we should have 6 return values
+            Assert.AreEqual(5, counter.Count);          // we have only 6 executions of the calculation
             Assert.AreEqual(2, logger.List.Count());    // out list of logs contains two exceptions
-            Assert.AreEqual(-100, (int)res1[0]);        // check for a successfull result
-            Assert.IsTrue(lastExceptionMessage          // and validate the execution for the DivideByZeroException
-                            .StartsWith("System.DivideByZeroException"));
+            Assert.AreEqual(100, (int)res1[1]);        // check for a successfull result
         }
 
+        /// <summary>
+        /// The method that implements the calculation.
+        /// </summary>
+        /// <param name="value"> The value. </param>
+        /// <returns> The result. </returns>
         private static int Calculate(string value)
         {
             return 100 / (value.Length - 2);
-        }
-    }
-
-    public class ExecutionCounter
-    {
-        public TResult Action<TResult>(Func<TResult> func)
-        {
-            this.Count = this.Count + 1;
-            return func();
-        }
-
-        public int Count { get; set; }
-
-        public TRight Action2<TValue, TRight>(Func<TValue, TRight> func, TValue x)
-        {
-            this.Count = this.Count + 1;
-            return func(x);
-        }
-        public TRight Action3<TValue, TRight>(Func<TValue, TRight> func, TValue x)
-        {
-            Console.WriteLine("Data was [{0}]", x);
-            return func(x);
         }
     }
 }
