@@ -80,21 +80,21 @@ namespace Sem.FuncLib
                 });
         }
 
-        ////public static IEnumerable<Either<Exception, TRight>> Try<TValue, TRight>(this IEnumerable<TValue> source, Func<TValue, TRight> func)
-        ////{
-        ////    return source
-        ////        .Select(x =>
-        ////        {
-        ////            try
-        ////            {
-        ////                return new Either<Exception, TRight>(func(x));
-        ////            }
-        ////            catch (Exception ex)
-        ////            {
-        ////                return new Either<Exception, TRight>(ex);
-        ////            }
-        ////        });
-        ////}
+        public static IEnumerable<Either<Exception, TRight>> Try<TValue, TRight>(this IEnumerable<TValue> source, Func<TValue, TRight> func)
+        {
+            return source
+                .Select(x =>
+                {
+                    try
+                    {
+                        return new Either<Exception, TRight>(func(x));
+                    }
+                    catch (Exception ex)
+                    {
+                        return new Either<Exception, TRight>(ex);
+                    }
+                });
+        }
 
         public static IEnumerable<Either<TLeft, TRight>> Try<TValue, TLeft, TRight>(this IEnumerable<TValue> source, Func<TValue, TRight> func)
             where TLeft : Exception
