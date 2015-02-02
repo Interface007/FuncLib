@@ -12,7 +12,6 @@ namespace Sem.FuncLib
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// The extensions for data handling with <see cref="Either{TOne,TTwo}"/>.
@@ -136,6 +135,16 @@ namespace Sem.FuncLib
                 });
         }
 
+        /// <summary>
+        /// Calls the function <paramref name="func"/> with each <see cref="FunctionWrapper{TValue,TRight}"/> of 
+        /// <paramref name="source"/> and returns either the result or the exception.
+        /// </summary>
+        /// <param name="source"> The source of the <see cref="FunctionWrapper{TValue,TRight}"/>. </param>
+        /// <param name="func"> The function to be called. </param>
+        /// <typeparam name="TValue"> The value of the functions parameter. </typeparam>
+        /// <typeparam name="TLeft"> The left type of the expected <see cref="Either{TLeft,TRight}"/> return value of the function. </typeparam>
+        /// <typeparam name="TRight"> The right type of the expected <see cref="Either{TLeft,TRight}"/> return value of the function. </typeparam>
+        /// <returns> Either the result or the exception. </returns>
         public static IEnumerable<Either<TLeft, TRight>> Try<TValue, TLeft, TRight>(this IEnumerable<TValue> source, Func<TValue, TRight> func)
             where TLeft : Exception
         {
@@ -153,6 +162,15 @@ namespace Sem.FuncLib
                     });
         }
 
+        /// <summary>
+        /// Creates a <see cref="FunctionWrapper{TValue,TRight}"/> for each element of <paramref name="source"/>, that can be 
+        /// called later (or can be combine with additional functions).
+        /// </summary>
+        /// <param name="source"> The source of the elements to wrap. </param>
+        /// <param name="func"> The function to be called. </param>
+        /// <typeparam name="TValue"> The value of the functions parameter. </typeparam>
+        /// <typeparam name="TRight"> The type of the <see cref="FunctionWrapper{TValue,TRight}"/> return value of the function. </typeparam>
+        /// <returns> A wrapper for invoking a function with a value. </returns>
         public static IEnumerable<FunctionWrapper<TValue, TRight>> WithAction<TValue, TRight>(
             this IEnumerable<TValue> source,
             Func<Func<TValue, TRight>, TValue, TRight> func)
@@ -160,29 +178,15 @@ namespace Sem.FuncLib
             return source.Select(x => new FunctionWrapper<TValue, TRight>(func, x));
         }
 
-        public static IEnumerable<FunctionWrapper<TValue, TRight>> WithActions<TValue, TRight>(
-            this IEnumerable<TValue> source,
-            IEnumerable<Func<Func<TValue, TRight>, TValue, TRight>> funcs)
-        {
-            var functions = funcs as Func<Func<TValue, TRight>, TValue, TRight>[] ?? funcs.ToArray();
-            var functionWrappers = source.WithAction(functions[0]);
-            return functionWrappers.WithActions(functions.Skip(1));
-        }
-
-        public static IEnumerable<FunctionWrapper<TValue, TRight>> WithActions<TValue, TRight>(
-            this IEnumerable<FunctionWrapper<TValue, TRight>> source,
-            IEnumerable<Func<Func<TValue, TRight>, TValue, TRight>> funcs)
-        {
-            var functions = funcs as Func<Func<TValue, TRight>, TValue, TRight>[] ?? funcs.ToArray();
-            if (functions.Length == 0)
-            {
-                return source;
-            }
-
-            var functionWrappers = source.WithAction(functions[0]);
-            return functionWrappers.WithActions(functions.Skip(1));
-        }
-
+        /// <summary>
+        /// Creates a new <see cref="FunctionWrapper{TValue,TRight}"/> for each element of <paramref name="source"/>, that is a 
+        /// combination of the current function and the function <paramref name="func"/>.
+        /// </summary>
+        /// <param name="source"> The source of the elements to wrap. </param>
+        /// <param name="func"> The function to be called. </param>
+        /// <typeparam name="TValue"> The value of the functions parameter. </typeparam>
+        /// <typeparam name="TRight"> The type of the <see cref="FunctionWrapper{TValue,TRight}"/> return value of the function. </typeparam>
+        /// <returns> A wrapper for invoking a function with a value. </returns>
         public static IEnumerable<FunctionWrapper<TValue, TRight>> WithAction<TValue, TRight>(
             this IEnumerable<FunctionWrapper<TValue, TRight>> source,
             Func<Func<TValue, TRight>, TValue, TRight> func)
@@ -195,6 +199,48 @@ namespace Sem.FuncLib
                         (f, v) => xFunc(v1 => func(f, v1), v),
                         xValue);
                 });
+        }
+
+        /// <summary>
+        /// Creates a <see cref="FunctionWrapper{TValue,TRight}"/> for each element of <paramref name="source"/>, that can be 
+        /// called later (or can be combine with additional functions). This wrapper will contain a chain of all functions 
+        /// from the parameter <paramref name="funcs"/>.
+        /// </summary>
+        /// <param name="source"> The source of the elements to wrap. </param>
+        /// <param name="funcs"> The functions to be called. </param>
+        /// <typeparam name="TValue"> The value of the functions parameter. </typeparam>
+        /// <typeparam name="TRight"> The type of the <see cref="FunctionWrapper{TValue,TRight}"/> return value of the function. </typeparam>
+        /// <returns> A wrapper for invoking a function with a value. </returns>
+        public static IEnumerable<FunctionWrapper<TValue, TRight>> WithActions<TValue, TRight>(
+            this IEnumerable<TValue> source,
+            IEnumerable<Func<Func<TValue, TRight>, TValue, TRight>> funcs)
+        {
+            var functions = funcs as Func<Func<TValue, TRight>, TValue, TRight>[] ?? funcs.ToArray();
+            var functionWrappers = source.WithAction(functions[0]);
+            return functionWrappers.WithActions(functions.Skip(1));
+        }
+
+        /// <summary>
+        /// Combines each <see cref="FunctionWrapper{TValue,TRight}"/> of <paramref name="source"/> with the new functions from 
+        /// <paramref name="funcs"/>. The new wrapper will contain a chain of all functions from the parameter <paramref name="funcs"/>.
+        /// </summary>
+        /// <param name="source"> The source of the elements to wrap. </param>
+        /// <param name="funcs"> The functions to be called. </param>
+        /// <typeparam name="TValue"> The value of the functions parameter. </typeparam>
+        /// <typeparam name="TRight"> The type of the <see cref="FunctionWrapper{TValue,TRight}"/> return value of the function. </typeparam>
+        /// <returns> A wrapper for invoking a function with a value. </returns>
+        public static IEnumerable<FunctionWrapper<TValue, TRight>> WithActions<TValue, TRight>(
+            this IEnumerable<FunctionWrapper<TValue, TRight>> source,
+            IEnumerable<Func<Func<TValue, TRight>, TValue, TRight>> funcs)
+        {
+            var functions = funcs as Func<Func<TValue, TRight>, TValue, TRight>[] ?? funcs.ToArray();
+            if (functions.Length == 0)
+            {
+                return source;
+            }
+
+            var functionWrappers = source.WithAction(functions[0]);
+            return functionWrappers.WithActions(functions.Skip(1));
         }
     }
 }

@@ -45,7 +45,6 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Failable.cs" />
     <Compile Include="IEither.cs" />
-    <Compile Include="Of.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

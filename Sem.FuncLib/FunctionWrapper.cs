@@ -44,6 +44,17 @@ namespace Sem.FuncLib
         }
 
         /// <summary>
+        /// Gets the value.
+        /// </summary>
+        public TValue Value
+        {
+            get
+            {
+                return this.value;
+            }
+        }
+
+        /// <summary>
         /// Gets the function to execute.
         /// </summary>
         internal Func<Func<TValue, TRight>, TValue, TRight> Func
@@ -62,17 +73,6 @@ namespace Sem.FuncLib
         internal TRight Execute(Func<TValue, TRight> action)
         {
             return this.func(action, this.value);
-        }
-
-        /// <summary>
-        /// Gets the value.
-        /// </summary>
-        public TValue Value
-        {
-            get
-            {
-                return this.value;
-            }
         }
     }
 }
