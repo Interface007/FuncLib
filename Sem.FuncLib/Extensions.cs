@@ -12,6 +12,7 @@ namespace Sem.FuncLib
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// The extensions for data handling with <see cref="Either{TOne,TTwo}"/>.
@@ -58,26 +59,68 @@ namespace Sem.FuncLib
             return eitherSource.Select(x => x.WhenIs(action));
         }
 
-        public static Func<TValue, Either<TResult1, TResult2>> Try<TValue, TResult1, TResult2>(this Func<TValue, TResult1> func)
-            where TResult2 : Exception
+        /// <summary>
+        /// Calls the function <paramref name="func"/> and returns either the result or the exception.
+        /// </summary>
+        /// <param name="func"> The function to be called. </param>
+        /// <typeparam name="TValue"> The value of the functions parameter. </typeparam>
+        /// <typeparam name="TRight"> The type of the expected return value of the function. </typeparam>
+        /// <typeparam name="TException"> The type of an expected exception. </typeparam>
+        /// <returns> Either the result or the exception. </returns>
+        public static Func<TValue, Either<TException, TRight>> Try<TValue, TRight, TException>(this Func<TValue, TRight> func)
+            where TException : Exception
         {
-            Func<TValue, Either<TResult1, TResult2>> result =
+            Func<TValue, Either<TException, TRight>> result =
                 x =>
                 {
                     try
                     {
-                        return new Either<TResult1, TResult2>(func(x));
+                        return new Either<TException, TRight>(func(x));
                     }
-                    catch (TResult2 ex)
+                    catch (TException ex)
                     {
-                        return new Either<TResult1, TResult2>(ex);
+                        return new Either<TException, TRight>(ex);
                     }
                 };
 
             return result;
         }
 
-        public static IEnumerable<Either<Exception, TRight>> Try<TValue, TRight>(this IEnumerable<ActionWrapper<TValue, TRight>> source, Func<TValue, TRight> func)
+        /// <summary>
+        /// Calls the function <paramref name="func"/> for each element of <paramref name="source"/> and 
+        /// returns either the result or the exception.
+        /// </summary>
+        /// <param name="source"> The elements to use for the function call. </param>
+        /// <param name="func"> The function to be called. </param>
+        /// <typeparam name="TValue"> The value of the functions parameter. </typeparam>
+        /// <typeparam name="TRight"> The type of the expected return value of the function. </typeparam>
+        /// <returns> Either the result or the exception. </returns>
+        public static IEnumerable<Either<Exception, TRight>> Try<TValue, TRight>(this IEnumerable<TValue> source, Func<TValue, TRight> func)
+        {
+            return source
+                .Select(x =>
+                    {
+                        try
+                        {
+                            return new Either<Exception, TRight>(func(x));
+                        }
+                        catch (Exception ex)
+                        {
+                            return new Either<Exception, TRight>(ex);
+                        }
+                    });
+        }
+
+        /// <summary>
+        /// Calls the function <paramref name="func"/> with each <see cref="FunctionWrapper{TValue,TRight}"/> of 
+        /// <paramref name="source"/> and returns either the result or the exception.
+        /// </summary>
+        /// <param name="source"> The source of the <see cref="FunctionWrapper{TValue,TRight}"/>. </param>
+        /// <param name="func"> The function to be called. </param>
+        /// <typeparam name="TValue"> The value of the functions parameter. </typeparam>
+        /// <typeparam name="TRight"> The type of the expected return value of the function. </typeparam>
+        /// <returns> Either the result or the exception. </returns>
+        public static IEnumerable<Either<Exception, TRight>> Try<TValue, TRight>(this IEnumerable<FunctionWrapper<TValue, TRight>> source, Func<TValue, TRight> func)
         {
             return source
                 .Select(x =>
@@ -85,22 +128,6 @@ namespace Sem.FuncLib
                     try
                     {
                         return new Either<Exception, TRight>(x.Execute(func));
-                    }
-                    catch (Exception ex)
-                    {
-                        return new Either<Exception, TRight>(ex);
-                    }
-                });
-        }
-
-        public static IEnumerable<Either<Exception, TRight>> Try<TValue, TRight>(this IEnumerable<TValue> source, Func<TValue, TRight> func)
-        {
-            return source
-                .Select(x =>
-                {
-                    try
-                    {
-                        return new Either<Exception, TRight>(func(x));
                     }
                     catch (Exception ex)
                     {
@@ -126,22 +153,45 @@ namespace Sem.FuncLib
                     });
         }
 
-        public static IEnumerable<ActionWrapper<TValue, TRight>> WithAction<TValue, TRight>(
+        public static IEnumerable<FunctionWrapper<TValue, TRight>> WithAction<TValue, TRight>(
             this IEnumerable<TValue> source,
             Func<Func<TValue, TRight>, TValue, TRight> func)
         {
-            return source.Select(x => new ActionWrapper<TValue, TRight>(func, x));
+            return source.Select(x => new FunctionWrapper<TValue, TRight>(func, x));
         }
 
-        public static IEnumerable<ActionWrapper<TValue, TRight>> WithAction<TValue, TRight>(
-            this IEnumerable<ActionWrapper<TValue, TRight>> source,
+        public static IEnumerable<FunctionWrapper<TValue, TRight>> WithActions<TValue, TRight>(
+            this IEnumerable<TValue> source,
+            IEnumerable<Func<Func<TValue, TRight>, TValue, TRight>> funcs)
+        {
+            var functions = funcs as Func<Func<TValue, TRight>, TValue, TRight>[] ?? funcs.ToArray();
+            var functionWrappers = source.WithAction(functions[0]);
+            return functionWrappers.WithActions(functions.Skip(1));
+        }
+
+        public static IEnumerable<FunctionWrapper<TValue, TRight>> WithActions<TValue, TRight>(
+            this IEnumerable<FunctionWrapper<TValue, TRight>> source,
+            IEnumerable<Func<Func<TValue, TRight>, TValue, TRight>> funcs)
+        {
+            var functions = funcs as Func<Func<TValue, TRight>, TValue, TRight>[] ?? funcs.ToArray();
+            if (functions.Length == 0)
+            {
+                return source;
+            }
+
+            var functionWrappers = source.WithAction(functions[0]);
+            return functionWrappers.WithActions(functions.Skip(1));
+        }
+
+        public static IEnumerable<FunctionWrapper<TValue, TRight>> WithAction<TValue, TRight>(
+            this IEnumerable<FunctionWrapper<TValue, TRight>> source,
             Func<Func<TValue, TRight>, TValue, TRight> func)
         {
             return source.Select(x =>
                 {
                     var xFunc = x.Func;
                     var xValue = x.Value;
-                    return new ActionWrapper<TValue, TRight>(
+                    return new FunctionWrapper<TValue, TRight>(
                         (f, v) => xFunc(v1 => func(f, v1), v),
                         xValue);
                 });

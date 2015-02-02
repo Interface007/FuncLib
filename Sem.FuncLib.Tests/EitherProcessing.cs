@@ -131,6 +131,27 @@ namespace Sem.FuncLib.Tests
             Assert.AreEqual(100, (int)res1[1]);        // check for a successfull result
         }
 
+        [TestMethod]
+        public void PerformingActionsFromAnArrayWhileCalculating()
+        {
+            var logger = new ExceptionLogger();
+            var counter = new ExecutionCounter();
+
+            var actions = new Func<Func<string, int>, string, int>[] { counter.Action2, counter.Action3 };
+            
+            var res1 = new[] { "1", "12", "123", "1234", null, "12345" }
+                .WithActions(actions)   
+                .Skip(1)
+                .Try(Calculate)         
+                .WhenIs(logger.HandleException)
+                .ToArray();
+
+            Assert.AreEqual(5, res1.Count());           // we should have 6 return values
+            Assert.AreEqual(5, counter.Count);          // we have only 6 executions of the calculation
+            Assert.AreEqual(2, logger.List.Count());    // out list of logs contains two exceptions
+            Assert.AreEqual(100, (int)res1[1]);        // check for a successfull result
+        }
+
         /// <summary>
         /// The method that implements the calculation.
         /// </summary>

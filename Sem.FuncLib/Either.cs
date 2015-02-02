@@ -43,7 +43,7 @@ namespace Sem.FuncLib
         /// <param name="instance">
         /// The instance of the value. 
         /// </param>
-        public Either(object instance)
+        internal Either(object instance)
             : this(instance, typeof(object))
         {
         }
@@ -57,7 +57,7 @@ namespace Sem.FuncLib
         /// <param name="type">
         /// The type of the object (useful when <paramref name="instance"/> is NULL). 
         /// </param>
-        public Either(object instance, Type type)
+        internal Either(object instance, Type type)
         {
             if (type == typeof(TLeft) || instance is TLeft)
             {
